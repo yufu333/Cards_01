@@ -1,26 +1,28 @@
 // スプライトシート情報
 const COLS = 13;
-const ROWS = 4;      // ここではトランプ52枚分のみ扱う
+const ROWS = 4;
 const img = new Image();
-img.src = "English_pattern_playing_cards_deck_PLUS_CC0.svg";  // リポジトリに配置しておく
+img.src = "English_pattern_playing_cards_deck_PLUS_CC0.jpg";
 
 let sheetW = 0;
 let sheetH = 0;
-let cardW = 0;
-let cardH = 0;
+let cardW = 147;   // 横幅は固定で 147px と決め打ち
+let cardH = 270;   // 縦はそのまま 270px
 
 img.onload = () => {
   sheetW = img.width;
   sheetH = img.height;
-  cardW = sheetW / COLS;
-  cardH = sheetH / ROWS;
-  console.log("sprite sheet loaded:", sheetW, sheetH, cardW, cardH);
+
+  // 必要ならログで確認
+  console.log("sprite sheet loaded:", sheetW, sheetH);
+  // 横方向の実使用幅は cardW * COLS のみ使う
+  console.log("effective width:", cardW * COLS);
 };
 
 // cardId: 0〜51
 // canvasId: 描画する <canvas> の id
 function show_card(cardId, canvasId) {
-  if (!img.complete || cardW === 0 || cardH === 0) {
+  if (!img.complete) {
     console.warn("image not loaded yet");
     return;
   }
@@ -42,15 +44,13 @@ function show_card(cardId, canvasId) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(
     img,
-    sx, sy, cardW, cardH,   // 元画像上の切り出し範囲
-    0, 0, canvas.width, canvas.height // canvas 上の描画サイズ
+    sx, sy, cardW, cardH,           // ここを固定値で切り出す
+    0, 0, canvas.width, canvas.height
   );
 }
 
-// PyScript から呼べるようにグローバルに公開
 window.show_card = show_card;
 
-// ボタン押下イベントを Python 側に渡すためのフック（あとで設定）
 window.onDrawClicked = null;
 
 document.addEventListener("DOMContentLoaded", () => {
