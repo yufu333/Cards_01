@@ -1,7 +1,6 @@
 import js
-import pyodide
 import random
-from pyodide import create_proxy
+from pyodide.ffi import create_proxy
 
 # 0〜51 のカードIDを使う
 deck = list(range(52))
