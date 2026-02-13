@@ -1,63 +1,90 @@
 // スプライトシート情報
 const COLS = 13;
 const ROWS = 4;
+
 const img = new Image();
 img.src = "English_pattern_playing_cards_deck_PLUS_CC0.jpg";
 
-let sheetW = 0;
-let sheetH = 0;
-let cardW = 147;   // 横幅は固定で 147px と決め打ち
-let cardH = 270;   // 縦はそのまま 270px
+// 画像内の「カード1枚」の切り出しサイズ（自動計算）
+let srcCardW = 0;
+let srcCardH = 0;
 
-img.onload = () => {
-  sheetW = img.width;
-  sheetH = img.height;
+// ★ 行間の区切り（今回の画像は合計3px → 1px×3本 とみなす）
+const GAP_Y = 1;
 
-  // 必要ならログで確認
-  console.log("sprite sheet loaded:", sheetW, sheetH);
-  // 横方向の実使用幅は cardW * COLS のみ使う
-  console.log("effective width:", cardW * COLS);
-};
+// 表示上のキャンバスサイズ（見た目のサイズ）
+const DISP_W = 147;
+const DISP_H = 270;
 
-// cardId: 0〜51
-// canvasId: 描画する <canvas> の id
+let ready = false;
+const pending = [];
+
+function prepareCanvas(canvas) {
+  const dpr = window.devicePixelRatio || 1;
+
+  // 見た目サイズ
+  canvas.style.width = `${DISP_W}px`;
+  canvas.style.height = `${DISP_H}px`;
+
+  // 実ピクセル
+  canvas.width = Math.round(DISP_W * dpr);
+  canvas.height = Math.round(DISP_H * dpr);
+
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  return ctx;
+}
+
 function show_card(cardId, canvasId) {
-  if (!img.complete) {
-    console.warn("image not loaded yet");
+  if (!ready) {
+    pending.push({ cardId, canvasId });
     return;
   }
 
   const canvas = document.getElementById(canvasId);
-  if (!canvas) {
-    console.error("canvas not found:", canvasId);
-    return;
-  }
+  if (!canvas) return;
 
-  const ctx = canvas.getContext("2d");
+  const ctx = prepareCanvas(canvas);
 
   const col = cardId % COLS;
   const row = Math.floor(cardId / COLS);
 
-  const sx = col * cardW;
-  const sy = row * cardH;
+  const sx = col * srcCardW;
+  const sy = row * srcCardH + row * GAP_Y; // ★ 行間1pxぶんを加える
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, DISP_W, DISP_H);
   ctx.drawImage(
     img,
-    sx, sy, cardW, cardH,           // ここを固定値で切り出す
-    0, 0, canvas.width, canvas.height
+    sx, sy, srcCardW, srcCardH, // 元画像から切り出し
+    0, 0, DISP_W, DISP_H        // キャンバスに縮小して描画
   );
 }
 
 window.show_card = show_card;
 
-window.onDrawClicked = null;
+img.onload = () => {
+  // 横は割り切れる：393px
+  srcCardW = Math.floor(img.width / COLS);
+
+  // 縦は「合計3pxの区切り」を引いてから4等分：720px
+  const totalGapY = GAP_Y * (ROWS - 1); // 1px×3本=3px
+  srcCardH = Math.floor((img.height - totalGapY) / ROWS);
+
+  ready = true;
+  console.log("loaded:", img.width, img.height, "card:", srcCardW, srcCardH, "gapY:", GAP_Y);
+
+  while (pending.length) {
+    const r = pending.shift();
+    show_card(r.cardId, r.canvasId);
+  }
+
+  if (window.onCardsReady) window.onCardsReady(); // 初回表示
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("drawBtn");
   btn.addEventListener("click", () => {
-    if (window.onDrawClicked) {
-      window.onDrawClicked();
-    }
+    if (window.onDrawClicked) window.onDrawClicked();
   });
 });
