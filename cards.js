@@ -3,7 +3,7 @@ const COLS = 13;
 const ROWS = 4;
 
 const img = new Image();
-img.src = "English_pattern_playing_cards_deck_PLUS_CC0.jpg";
+img.src = "English_pattern_playing_cards_deck_PLUS_CC0.svg";
 
 // 画像内の「カード1枚」の切り出しサイズ（自動計算）
 let srcCardW = 0;
