@@ -14,9 +14,8 @@ def draw_two_cards(*args, **kwargs):
     js.show_card(int(c1), "cardCanvas1")
     js.show_card(int(c2), "cardCanvas2")
 
-    # JS から呼べるように Python 関数を登録
-    # window.onDrawClicked = draw_two_cards に相当
-    js.window.onDrawClicked = create_proxy(draw_two_cards)
-
-# ページ読み込み直後にも1回引いておく（お好みで）
-draw_two_cards()
+# JS から呼べるように Python 関数を登録
+# window.onDrawClicked = draw_two_cards に相当
+js.window.onDrawClicked = create_proxy(draw_two_cards)
+# 画像ロードが終わったら最初の2枚を描画（JS側で window.onCardsReady() を呼ぶ）
+js.window.onCardsReady = create_proxy(draw_two_cards)
