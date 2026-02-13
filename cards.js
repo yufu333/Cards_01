@@ -3,16 +3,17 @@ const COLS = 13;
 const ROWS = 4;
 
 const img = new Image();
+// ★キャッシュ対策（任意：更新するたびに数字を変えると確実）
 img.src = "English_pattern_playing_cards_deck_PLUS_CC0.svg?v=20260213";
 
-// 画像内の「カード1枚」の切り出しサイズ（自動計算）
 let srcCardW = 0;
 let srcCardH = 0;
 
-// ★ 行間の区切り（今回の画像は合計3px → 1px×3本 とみなす）
-const GAP_Y = 1;
+// ★余り（今回は3px）を「上下余白」とみなす
+let TOP_Y = 0;     // 上余白
+const GAP_Y = 0;   // 行間は0にする
 
-// 表示上のキャンバスサイズ（見た目のサイズ）
+// 表示サイズ
 const DISP_W = 147;
 const DISP_H = 270;
 
@@ -22,11 +23,9 @@ const pending = [];
 function prepareCanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
 
-  // 見た目サイズ
   canvas.style.width = `${DISP_W}px`;
   canvas.style.height = `${DISP_H}px`;
 
-  // 実ピクセル
   canvas.width = Math.round(DISP_W * dpr);
   canvas.height = Math.round(DISP_H * dpr);
 
@@ -51,36 +50,34 @@ function show_card(cardId, canvasId) {
   const row = Math.floor(cardId / COLS);
 
   const sx = col * srcCardW;
-  const sy = row * srcCardH + row * GAP_Y; // ★ 行間1pxぶんを加える
+  // ★ここが肝：行間で増やさず、上余白 + row*高さ
+  const sy = TOP_Y + row * (srcCardH + GAP_Y);
 
   ctx.clearRect(0, 0, DISP_W, DISP_H);
-  ctx.drawImage(
-    img,
-    sx, sy, srcCardW, srcCardH, // 元画像から切り出し
-    0, 0, DISP_W, DISP_H        // キャンバスに縮小して描画
-  );
+  ctx.drawImage(img, sx, sy, srcCardW, srcCardH, 0, 0, DISP_W, DISP_H);
 }
 
 window.show_card = show_card;
 
 img.onload = () => {
-  // 横は割り切れる：393px
-  srcCardW = Math.floor(img.width / COLS);
+  srcCardW = Math.floor(img.width / COLS);    // 5109/13 = 393
+  srcCardH = Math.floor(img.height / ROWS);   // 2883/4 = 720 (余り3)
 
-  // 縦は「合計3pxの区切り」を引いてから4等分：720px
-  const totalGapY = GAP_Y * (ROWS - 1); // 1px×3本=3px
-  srcCardH = Math.floor((img.height - totalGapY) / ROWS);
+  const remainderY = img.height - srcCardH * ROWS; // 3
+  TOP_Y = Math.floor(remainderY / 2);              // 1（上1px、下2px）
 
   ready = true;
-  console.log("loaded:", img.width, img.height, "card:", srcCardW, srcCardH, "gapY:", GAP_Y);
+  console.log("loaded:", img.width, img.height, "card:", srcCardW, srcCardH, "TOP_Y:", TOP_Y);
 
   while (pending.length) {
     const r = pending.shift();
     show_card(r.cardId, r.canvasId);
   }
 
-  if (window.onCardsReady) window.onCardsReady(); // 初回表示
+  if (window.onCardsReady) window.onCardsReady();
 };
+
+img.onerror = (e) => console.error("image load error", e, img.src);
 
 document.addEventListener("DOMContentLoaded", () => {
   const btn = document.getElementById("drawBtn");
@@ -88,3 +85,4 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.onDrawClicked) window.onDrawClicked();
   });
 });
+
