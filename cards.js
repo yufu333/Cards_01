@@ -2,7 +2,7 @@
 const COLS = 13;
 const ROWS = 4;      // ここではトランプ52枚分のみ扱う
 const img = new Image();
-img.src = "English_pattern_playing_cards_deck_PLUS_CC0.jpg";  // リポジトリに配置しておく
+img.src = "English_pattern_playing_cards_deck_PLUS_CC0.svg";  // リポジトリに配置しておく
 
 let sheetW = 0;
 let sheetH = 0;
